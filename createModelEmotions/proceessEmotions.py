@@ -16,22 +16,18 @@ from text_processingEmotions import clean_text
 #disable CUDA no GPU computers
 os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 
-
 df=pd.read_csv('./text.csv')
 
 labels = df["label"].values
 textsToClean = df["text"].values
-
 
 # Clean the text data
 texts = [clean_text(text) for text in textsToClean]
 
 outputs = []
 
-# Probamos a usar el modelo 
 inputs = tf.constant(texts)
 
-print("Sentence = "+str(inputs[0]))
 #sadness (0), joy (1), love (2), anger (3), fear (4), and surprise (5)
 
 for label in labels:
@@ -44,22 +40,26 @@ outputs = tf.constant(outputs)
 
 split_index = int(0.8 * len(inputs))
 
-#Crea un dataset de entrenamiento, incluye las frases (entradas) y las etiquetas (salidas)
+
 train_data = []
+
+#Crea un dataset de entrenamiento, incluye las frases (entradas) y las etiquetas (salidas)
 train_data.append(inputs[:split_index])
 train_data.append(outputs[:split_index])
 
-#Crea un dataset conjunto de evaluación, es Fake, el mismo que el anterior.
+#Crea un dataset de evaluación, incluye las frases (entradas) y las etiquetas (salidas).
 evaluate_data = []
 evaluate_data.append(inputs[split_index:])
 evaluate_data.append(outputs[split_index:])
 
+
+#Convert to NumPy arrays
 train_texts, train_labels = tfds.as_numpy(train_data)
-# Para el evaluate
+
 evaluate_texts, evaluate_labels = tfds.as_numpy(evaluate_data)
 
 
-
+# text=>numbers
 model_nnlm = "https://tfhub.dev/google/nnlm-en-dim50-with-normalization/2"
 hub_layer = hub.KerasLayer(model_nnlm, input_shape=[], dtype=tf.string, trainable=True)
 
