@@ -5,11 +5,11 @@ import pandas as pd
 import tensorflow_hub as hub
 import tensorflow as tf
 import tensorflow_datasets as tfds
-
+import matplotlib.pyplot as plt
 # Save models into a file!
 import os
-
-
+from tensorflow.keras.callbacks import EarlyStopping
+from tensorflow.keras.optimizers import Adam
 from text_processingEmotions import clean_text
 
 
@@ -75,21 +75,54 @@ model.add(tf.keras.layers.Dense(6, activation='sigmoid'))
 
 
 # Compilamos el modelo
-model.compile(optimizer='adam',
+learning_rate = 0.001
+optimizer = Adam(learning_rate=learning_rate)
+model.compile(optimizer=optimizer,
               loss=tf.losses.BinaryCrossentropy(from_logits=True),
-              metrics=[tf.metrics.BinaryAccuracy(threshold=0.0, name='accuracy')])
+              metrics=[tf.metrics.BinaryAccuracy(threshold=0.2, name='accuracy')])
+
+early_stopping = EarlyStopping(monitor='val_loss', patience=4, restore_best_weights=True)
+
 
 # Iniciamos el entrenamiento
 history = model.fit(train_texts,
                     train_labels,
-                    epochs=10,
+                    epochs=100,
                     batch_size=512,
                     validation_data=(evaluate_texts, evaluate_labels),
+                    callbacks=[early_stopping],
                     verbose=1)
+
+# Mostramos todos los pasos del history
+print(history.history)
+
+# Gráfica de la pérdida y precisión
+plt.figure(figsize=(12, 6))
+
+# Pérdida
+plt.subplot(1, 2, 1)
+plt.plot(history.history['loss'], label='Training Loss')
+plt.plot(history.history['val_loss'], label='Validation Loss')
+plt.title('Loss')
+plt.xlabel('Epoch')
+plt.ylabel('Loss')
+plt.legend()
+
+# Precisión
+plt.subplot(1, 2, 2)
+plt.plot(history.history['accuracy'], label='Training Accuracy')
+plt.plot(history.history['val_accuracy'], label='Validation Accuracy')
+plt.title('Accuracy')
+plt.xlabel('Epoch')
+plt.ylabel('Accuracy')
+plt.legend()
+
+plt.show()
+
 
 # Evaluamos el modelo
 results = model.evaluate(evaluate_texts, evaluate_labels)
 # Son perdida y precisión
-print(results)
+#print(results)
 
-model.save("emotionsModelWithCleanData.h5")
+model.save("emotionsModelWithCleanData2.keras")
